@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f4f1">
+<title>顧客管理</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#302d32;background:#f6f4f1}*{box-sizing:border-box}body{margin:0;padding:24px 14px 80px}main{max-width:540px;margin:auto}h1{font-size:23px}h2{font-size:18px;margin:0 0 14px}.panel{background:white;border-radius:16px;padding:18px;margin:16px 0;box-shadow:0 1px 8px #0000000b}input,select,button{font:inherit;border-radius:9px;padding:11px;max-width:100%}input,select{border:1px solid #d5d0d7;background:white;width:100%;margin:6px 0}button{border:0;background:#64536c;color:white;cursor:pointer}button:disabled{opacity:.45}.secondary{background:#e9e5e9;color:#332f35}.danger{background:#f8eaea;color:#8c3333}.line{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:9px 0}.line>*{min-width:0}.muted{color:#716c75;font-size:13px}.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.day{height:44px;background:#f3f0f3;color:#312b33;padding:4px;font-size:14px;position:relative}.day.selected{background:#64536c;color:white}.day.has-visit:after{content:"•";position:absolute;bottom:0;left:46%;font-size:17px}.weekday{text-align:center;font-size:12px;color:#666;padding:8px 0}.entry{border-bottom:1px solid #eee;padding:10px 0}.entry:last-child{border-bottom:0}.entry button{padding:6px 9px;font-size:13px}label{font-size:14px;font-weight:600}small{display:block;margin:10px 0;color:#777}#status{color:#8a3333}a{color:#58436a}
+</style>
+</head>
+<body><main>
+<h1>顧客管理</h1>
+<p class="muted">来店記録を端末のブラウザに保存します。</p>
+<p id="status" role="alert"></p>
+<section class="panel">
+<h2>カレンダー</h2>
+<div class="line"><button class="secondary" id="prev" aria-label="前の月">‹ 前月</button><strong id="month"></strong><button class="secondary" id="next" aria-label="次の月">次月 ›</button></div>
+<div class="calendar" id="calendar"></div>
+<p id="selected"></p>
+<label for="visitCustomer">来店したお客さん</label>
+<select id="visitCustomer"></select>
+<button id="addVisit">この日に来店を記録</button>
+<div id="dailyVisits"></div>
+</section>
+<section class="panel">
+<h2>お客さんを登録</h2>
+<label for="customerName">名前・呼び名</label>
+<input id="customerName" maxlength="80" placeholder="例：サンプルさん" autocomplete="off">
+<button id="addCustomer">登録する</button>
+<div id="customers"></div>
+</section>
+<section class="panel"><h2>バックアップ</h2>
+<p class="muted">データを失わないよう、定期的に書き出して保管してください。書き出しファイルは暗号化されていません。</p>
+<button id="export" class="secondary">バックアップを書き出す</button>
+<label for="import">バックアップを読み込む</label>
+<input type="file" id="import" accept="application/json,.json">
+<small>読み込みを実行すると、現在の登録内容はバックアップの内容に置き換わります。</small>
+</section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const dateKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today=new Date();let year=today.getFullYear(),month=today.getMonth(),selected=dateKey(today);
+let db,customers=[],visits=[];
+function report(msg){$('status').textContent=msg;}
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('customer-calendar-v1',1);req.onupgradeneeded=()=>{const d=req.result;d.createObjectStore('customers',{keyPath:'id'});d.createObjectStore('visits',{keyPath:'id'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+function all(store){return new Promise((resolve,reject)=>{const req=db.transaction(store,'readonly').objectStore(store).getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+function put(store,item){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+function del(store,id){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+function clearStore(store){return new Promise((resolve,reject)=>{const tx=db.transaction(store,'readwrite');tx.objectStore(store).clear();tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+async function refresh(){customers=await all('customers');visits=await all('visits');render();}
+function node(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
+function render(){
+ $('month').textContent=`${year}年${month+1}月`;$('selected').textContent=`選択中：${selected}`;
+ const grid=$('calendar');grid.replaceChildren();['日','月','火','水','木','金','土'].forEach(w=>grid.append(node('div',w,'weekday')));
+ const offset=new Date(year,month,1).getDay(),last=new Date(year,month+1,0).getDate();
+ for(let i=0;i<offset;i++)grid.append(node('div'));
+ for(let day=1;day<=last;day++){const key=`${year}-${pad(month+1)}-${pad(day)}`;const b=node('button',String(day),'day'+(key===selected?' selected':'')+(visits.some(v=>v.date===key)?' has-visit':''));b.type='button';b.onclick=()=>{selected=key;render();};grid.append(b);}
+ const select=$('visitCustomer');const prior=select.value;select.replaceChildren();customers.forEach(c=>{const o=node('option',c.name);o.value=c.id;select.append(o);});if(customers.some(c=>c.id===prior))select.value=prior;
+ $('addVisit').disabled=!customers.length;
+ const daily=$('dailyVisits');daily.replaceChildren();const records=visits.filter(v=>v.date===selected);
+ if(records.length)daily.append(node('h3','この日の来店'));
+ records.forEach(v=>{const row=node('div',undefined,'line entry');row.append(node('span',customers.find(c=>c.id===v.customerId)?.name||'削除済みの顧客'));const b=node('button','取消','danger');b.onclick=async()=>{await del('visits',v.id);await refresh();};row.append(b);daily.append(row);});
+ const list=$('customers');list.replaceChildren();customers.sort((a,b)=>a.name.localeCompare(b.name,'ja')).forEach(c=>{const related=visits.filter(v=>v.customerId===c.id).sort((a,b)=>b.date.localeCompare(a.date));const box=node('div',undefined,'entry');box.append(node('strong',c.name));box.append(node('div',`${related.length}回来店${related.length?' / 最終：'+related[0].date:''}`,'muted'));const b=node('button','削除','danger');b.onclick=async()=>{if(!confirm(`${c.name}さんと来店履歴を削除しますか？`))return;await del('customers',c.id);for(const v of related)await del('visits',v.id);await refresh();};box.append(b);list.append(box);});
+}
+$('prev').onclick=()=>{const d=new Date(year,month-1,1);year=d.getFullYear();month=d.getMonth();render();};
+$('next').onclick=()=>{const d=new Date(year,month+1,1);year=d.getFullYear();month=d.getMonth();render();};
+$('addCustomer').onclick=async()=>{const name=$('customerName').value.trim();if(!name)return alert('名前を入力してください');if(customers.some(c=>c.name===name))return alert('同じ名前が登録されています');await put('customers',{id:crypto.randomUUID(),name});$('customerName').value='';await refresh();};
+$('addVisit').onclick=async()=>{const customerId=$('visitCustomer').value;if(!customerId)return;if(visits.some(v=>v.customerId===customerId&&v.date===selected))return alert('この日の来店は記録済みです');await put('visits',{id:crypto.randomUUID(),customerId,date:selected});await refresh();};
+$('export').onclick=()=>{const content=JSON.stringify({version:1,customers,visits},null,2);const blob=new Blob([content],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`customer-backup-${dateKey(new Date())}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);};
+$('import').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(data.version!==1||!Array.isArray(data.customers)||!Array.isArray(data.visits)||!data.customers.every(c=>typeof c.id==='string'&&typeof c.name==='string')||!data.visits.every(v=>typeof v.id==='string'&&typeof v.customerId==='string'&&typeof v.date==='string'))throw Error('ファイルの形式が違います');if(!confirm('現在のデータをバックアップの内容で置き換えますか？'))return;await clearStore('visits');await clearStore('customers');for(const c of data.customers)await put('customers',c);for(const v of data.visits)await put('visits',v);await refresh();alert('読み込みが完了しました');}catch(err){report('読み込みエラー：'+err.message);}finally{e.target.value='';}};
+(async()=>{try{if(!('indexedDB'in window))throw Error('このブラウザはIndexedDBに対応していません');db=await openDB();await refresh();}catch(e){report('保存領域を利用できません：'+e.message);$('addCustomer').disabled=true;$('addVisit').disabled=true;}})();
+</script>
+</body></html>

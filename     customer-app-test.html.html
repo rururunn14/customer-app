@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f4f1">
+<title>顧客管理</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#302d32;background:#f6f4f1;--accent:#64536c;--accent-soft:#e9e5e9;--surface:#fff;--soft:#f3f0f3;--line:#e8e3e7;--muted:#77717b}
+*{box-sizing:border-box}html{background:#f6f4f1}body{margin:0;background:#f6f4f1}button,input,textarea,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{max-width:560px;margin:0 auto;padding:20px 14px calc(110px + env(safe-area-inset-bottom))}header{display:flex;align-items:center;justify-content:center;min-height:64px;position:relative}h1{font-size:23px;margin:0}h2{font-size:18px;margin:0 0 12px}.muted{color:var(--muted);font-size:13px;line-height:1.6}.panel{background:var(--surface);border:1px solid #f0edef;border-radius:19px;padding:18px;margin:14px 0;box-shadow:0 2px 9px #00000008}.row{display:flex;align-items:center;justify-content:space-between;gap:8px}.row button{flex-shrink:0}
+.btn{border:0;background:var(--accent);color:white;padding:12px 14px;border-radius:11px;font-weight:600}.btn.secondary{background:var(--accent-soft);color:#332f35}.btn.danger{background:#f8eaea;color:#8c3333}.btn:disabled,.text-button:disabled{opacity:.45}.wide{width:100%;margin-top:12px}input,textarea,select{width:100%;min-width:0;background:white;border:1px solid #d5d0d7;border-radius:10px;padding:12px;margin:7px 0 14px;color:#302d32}textarea{min-height:118px;resize:vertical}label{font-weight:600;font-size:14px;display:block}
+.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:18px}.weekday{text-align:center;padding:8px 0;color:#77717b;font-size:12px}.day{border:0;background:var(--soft);min-height:45px;border-radius:9px;position:relative;color:#302d32;font-size:15px;padding:5px}.day.selected{background:var(--accent);color:white}.day.has-visit:after{content:"•";position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:17px}.entry{padding:14px 0;border-bottom:1px solid var(--line)}.entry:last-child{border-bottom:0}.name{font-size:16px;font-weight:600}.details{font-size:13px;color:var(--muted);margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}.entry-actions{display:flex;gap:8px;margin-top:9px}.tiny{font-size:13px;padding:8px 11px}
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:9px 14px calc(9px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:8px;z-index:10}.tabbar button{border:0;border-radius:11px;background:white;color:#88838b;font-size:14px;padding:10px;max-width:190px;flex:1}.tabbar button[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}.tabbar svg{display:block;margin:0 auto 4px;width:21px;height:21px}
+.page[hidden],#customerFormView[hidden],#customerListView[hidden],#customerDetailView[hidden],.note-overlay[hidden]{display:none}.notice{background:#f8eaea;border-radius:8px;padding:12px;color:#8c3333}.blank{min-height:45px}#status:empty{display:none}#status{color:#8c3333;font-size:13px;white-space:pre-wrap}.form-header{display:flex;align-items:center;justify-content:space-between;padding:2px 0 12px;border-bottom:1px solid var(--line)}.text-button{background:transparent;border:0;padding:10px 4px;color:var(--accent);font-weight:600}.text-button.close{font-size:26px;color:#453b41}.form-title{font-size:20px;font-weight:700}.form-field{padding:15px 0;border-bottom:1px solid var(--line)}.form-field:last-child{border-bottom:0}.form-field.memo-field{display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px;align-items:start}.memo-field label{line-height:1.4}.memo-field textarea{margin:0}.help{font-size:12px;color:var(--muted)}.card-title{margin-top:18px}a{color:var(--accent)}.visit-name,.customer-name{border:0;background:none;color:var(--accent);padding:8px 4px 8px 0;text-align:left;text-decoration:underline;text-underline-offset:3px;font-weight:600;font-size:16px}.visit-name{flex:1;min-width:0;overflow-wrap:anywhere}.customer-name{display:block;max-width:100%;overflow-wrap:anywhere}.note-indicator{font-size:12px;color:var(--muted)}.detail-line{padding:12px 0;border-bottom:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere}.detail-line strong{display:block;margin-bottom:5px;font-size:14px}.detail-line span{font-size:15px}.note-overlay{position:fixed;inset:var(--note-top,0px) 0 auto;height:var(--note-height,100%);background:#302d3277;z-index:30;display:flex;align-items:center;justify-content:center;padding:18px}.note-dialog{display:flex;flex-direction:column;width:100%;max-width:520px;max-height:100%;overflow:auto;overscroll-behavior:contain;background:white;border-radius:18px;padding:20px;box-shadow:0 10px 40px #0003}.note-dialog .muted{overflow-wrap:anywhere}.note-dialog h2{margin:8px 0}.note-dialog textarea{flex:0 1 170px;min-height:54px;height:170px}.note-actions{display:flex;flex-shrink:0;gap:10px;justify-content:flex-end}.note-actions .btn{flex:1}
+.note-overlay.compact .note-dialog{padding:12px}.note-overlay.compact h2{margin:0 0 4px}.note-overlay.compact .muted{margin:0 0 6px}.note-overlay.compact textarea{margin:5px 0 8px;padding:8px}
+@media(max-width:360px){main{padding-left:10px;padding-right:10px}.panel{padding:13px}.day{min-height:39px;font-size:13px}.form-field.memo-field{grid-template-columns:54px minmax(0,1fr);gap:8px}.btn{padding:11px 10px}}
+</style>
+</head>
+<body>
+<main>
+<p id="status" role="alert"></p><noscript><p class="notice">このプレビューでは操作できません。GitHub Pagesで公開したページをSafariから開いてください。</p></noscript>
+<section class="page" id="calendarPage">
+<header><h1>カレンダー</h1></header>
+<section class="panel">
+<div class="row"><button class="btn secondary" id="prev" aria-label="前の月">‹</button><strong id="month"></strong><button class="btn secondary" id="next" aria-label="次の月">›</button></div>
+<div id="calendar" class="calendar" aria-label="来店カレンダー"></div>
+<p id="selected" class="muted"></p>
+<label for="visitCustomer">来店したお客さん</label><select id="visitCustomer"></select>
+<button class="btn wide" id="addVisit">この日に来店を記録</button>
+<div id="dailyVisits"></div>
+</section>
+</section>
+<section class="page" id="customersPage" hidden>
+<div id="customerListView">
+<header><h1>顧客一覧</h1></header>
+<section class="panel">
+<div id="customers"></div>
+<button class="btn wide" id="openCustomerForm" type="button">＋ 顧客を追加する</button>
+</section>
+</div>
+<div id="customerDetailView" hidden>
+<div class="form-header"><button class="text-button close" id="closeCustomerDetail" type="button" aria-label="顧客一覧へ戻る">×</button><span class="form-title">顧客</span><button class="text-button" id="editCustomer" type="button">編集</button></div>
+<section class="panel" id="customerDetailFields"></section>
+</div>
+<div id="customerFormView" hidden>
+<div class="form-header"><button class="text-button close" type="button" id="cancelCustomer" aria-label="顧客一覧へ戻る">×</button><span class="form-title">顧客</span><button class="text-button" type="button" id="saveCustomer">保存</button></div><p class="muted">名前・誕生日・お酒・メモを入力して保存できます。</p>
+<form id="customerForm" autocomplete="off">
+<div class="form-field"><label for="customerName">名前</label><input id="customerName" maxlength="80" required placeholder="名前を入力"></div>
+<div class="form-field"><label for="customerBirthday">誕生日</label><input id="customerBirthday" type="text" maxlength="200" placeholder="例：5月16日、5月生まれ、誕生日不明"></div>
+<div class="form-field"><label for="customerAlcohol">お酒</label><input id="customerAlcohol" maxlength="300" placeholder="好きなお酒・よく飲むお酒"></div>
+<div class="form-field memo-field"><label for="customerMemo">メモ</label><textarea id="customerMemo" maxlength="5000" placeholder="自由に入力"></textarea></div>
+</form>
+<button class="btn secondary wide" type="button" id="goCustomerList">顧客一覧を見る</button>
+</div>
+</section>
+<section class="page" id="settingsPage" hidden>
+<header><h1>設定</h1></header>
+<section class="panel"><h2>バックアップ</h2>
+<p class="muted">定期的にバックアップを保存してください。書き出すファイルは暗号化されていません。</p>
+<button class="btn secondary wide" id="export">バックアップを書き出す</button>
+<label for="import" class="card-title">バックアップを読み込む</label>
+<input type="file" id="import" accept="application/json,.json">
+<p class="muted">読み込むと現在のデータがバックアップの内容に置き換わります。</p>
+</section>
+</section>
+</main>
+<section class="note-overlay" id="visitNoteOverlay" hidden aria-label="来店日別メモ">
+<div class="note-dialog" role="dialog" aria-modal="true" aria-labelledby="visitNoteTitle">
+<h2 id="visitNoteTitle">来店日のメモ</h2>
+<p class="muted" id="visitNoteInfo"></p>
+<label for="visitNoteText">この日のメモ</label>
+<textarea id="visitNoteText" maxlength="5000" placeholder="この日に話したことなど"></textarea>
+<div class="note-actions"><button class="btn secondary" id="cancelVisitNote" type="button">閉じる</button><button class="btn" id="saveVisitNote" type="button">保存</button></div>
+</div></section>
+<nav class="tabbar" aria-label="画面切り替え">
+<button data-tab="calendarPage" aria-selected="true" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>カレンダー</button>
+<button data-tab="customersPage" aria-selected="false" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>顧客</button>
+<button data-tab="settingsPage" aria-selected="false" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.2 2.2m8.4 8.4 2.2 2.2m0-12.8-2.2 2.2M7.8 16.2l-2.2 2.2"/><circle cx="12" cy="12" r="4"/></svg>設定</button>
+</nav>
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const stores = ['customers', 'visits'];
+const today = new Date();
+let year = today.getFullYear(), month = today.getMonth(), selected = dateKey(today);
+let db, customers = [], visits = [];
+let editingCustomerId = null, detailCustomerId = null, noteVisitId = null;
+
+function report(message) {
+  $('status').textContent = message;
+}
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    // 従来版と同じ名前・バージョン・キーで開く。来店メモは既存の visits に保存する。
+    const request = indexedDB.open('customer-calendar-v1', 1);
+    request.onupgradeneeded = () => {
+      for (const store of stores) {
+        if (!request.result.objectStoreNames.contains(store)) {
+          request.result.createObjectStore(store, { keyPath: 'id' });
+        }
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function readData() {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(stores, 'readonly');
+    const customerRecords = transaction.objectStore('customers').getAll();
+    const visitRecords = transaction.objectStore('visits').getAll();
+    transaction.oncomplete = () => resolve({ customers: customerRecords.result, visits: visitRecords.result });
+    transaction.onabort = () => reject(transaction.error || Error('データの読み取りが中断されました'));
+  });
+}
+
+function writeData(storeNames, queueRequests) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeNames, 'readwrite');
+    let failure;
+    const abort = error => {
+      failure = error;
+      transaction.abort();
+    };
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(failure || transaction.error || Error('データの書き込みが中断されました'));
+    try {
+      queueRequests(transaction, abort);
+    } catch (error) {
+      abort(error);
+    }
+  });
+}
+
+async function refresh() {
+  ({ customers, visits } = await readData());
+  render();
+}
+
+function node(tag, text, className) {
+  const element = document.createElement(tag);
+  if (text !== undefined) element.textContent = text;
+  if (className) element.className = className;
+  return element;
+}
+
+function showTab(id) {
+  for (const page of document.querySelectorAll('.page')) page.hidden = page.id !== id;
+  for (const button of document.querySelectorAll('[data-tab]')) {
+    button.setAttribute('aria-selected', String(button.dataset.tab === id));
+  }
+  if (id === 'customersPage') showCustomerForm();
+  window.scrollTo(0, 0);
+}
+
+function showCustomerList() {
+  $('customerListView').hidden = false;
+  $('customerFormView').hidden = true;
+  $('customerDetailView').hidden = true;
+  editingCustomerId = null;
+  window.scrollTo(0, 0);
+}
+
+function showCustomerForm(id = null) {
+  const customer = id === null ? undefined : customers.find(c => c.id === id);
+  if (id !== null && !customer) {
+    report('顧客情報が見つかりません');
+    return;
+  }
+  editingCustomerId = id;
+  $('customerForm').reset();
+  if (customer) {
+    $('customerName').value = customer.name;
+    $('customerBirthday').value = customer.birthday ?? '';
+    $('customerAlcohol').value = customer.alcohol ?? '';
+    $('customerMemo').value = customer.memo ?? '';
+  }
+  $('customerListView').hidden = true;
+  $('customerDetailView').hidden = true;
+  $('customerFormView').hidden = false;
+  window.scrollTo(0, 0);
+}
+
+function showCustomerDetail(id) {
+  const customer = customers.find(c => c.id === id);
+  if (!customer) return;
+  detailCustomerId = id;
+  const fields = $('customerDetailFields');
+  fields.replaceChildren();
+  for (const [label, value] of [['名前', customer.name], ['誕生日', customer.birthday], ['お酒', customer.alcohol], ['メモ', customer.memo]]) {
+    const row = node('div', undefined, 'detail-line');
+    row.append(node('strong', label), node('span', value || '未入力'));
+    fields.append(row);
+  }
+  $('customerListView').hidden = true;
+  $('customerFormView').hidden = true;
+  $('customerDetailView').hidden = false;
+  window.scrollTo(0, 0);
+}
+
+function render() {
+  $('month').textContent = `${year}年${month + 1}月`;
+  $('selected').textContent = `選択中：${selected}`;
+  const calendar = $('calendar');
+  calendar.replaceChildren();
+  for (const weekday of ['日', '月', '火', '水', '木', '金', '土']) {
+    calendar.append(node('div', weekday, 'weekday'));
+  }
+  const offset = new Date(year, month, 1).getDay();
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const visitDates = new Set(visits.map(visit => visit.date));
+  for (let i = 0; i < offset; i++) calendar.append(node('div', undefined, 'blank'));
+  for (let day = 1; day <= lastDay; day++) {
+    const date = dateKey(new Date(year, month, day));
+    const button = node('button', String(day), 'day');
+    button.type = 'button';
+    button.classList.toggle('selected', date === selected);
+    button.classList.toggle('has-visit', visitDates.has(date));
+    button.setAttribute('aria-label', date);
+    button.onclick = () => {
+      selected = date;
+      render();
+    };
+    calendar.append(button);
+  }
+
+  const select = $('visitCustomer');
+  const previousCustomer = select.value;
+  select.replaceChildren();
+  for (const customer of customers) {
+    const option = node('option', customer.name);
+    option.value = customer.id;
+    select.append(option);
+  }
+  if (customers.some(customer => customer.id === previousCustomer)) select.value = previousCustomer;
+  $('addVisit').disabled = !db || !customers.length;
+
+  const daily = $('dailyVisits');
+  daily.replaceChildren();
+  const dailyRecords = visits.filter(visit => visit.date === selected);
+  if (dailyRecords.length) daily.append(node('h2', 'この日の来店', 'card-title'));
+  for (const visit of dailyRecords) {
+    const row = node('div', undefined, 'row entry');
+    const name = customers.find(customer => customer.id === visit.customerId)?.name || '削除済みの顧客';
+    const noteButton = node('button', name, 'visit-name');
+    noteButton.type = 'button';
+    noteButton.setAttribute('aria-label', `${name}のこの日のメモ`);
+    noteButton.onclick = () => openVisitNote(visit.id);
+    row.append(noteButton);
+    if (visit.note) row.append(node('span', 'メモあり', 'note-indicator'));
+    const cancelButton = node('button', '取消', 'btn danger tiny');
+    cancelButton.type = 'button';
+    cancelButton.onclick = () => cancelVisit(visit.id);
+    row.append(cancelButton);
+    daily.append(row);
+  }
+
+  const list = $('customers');
+  list.replaceChildren();
+  if (!customers.length) list.append(node('p', '顧客はまだ登録されていません。', 'muted'));
+  for (const customer of [...customers].sort((a, b) => a.name.localeCompare(b.name, 'ja'))) {
+    const related = visits.filter(visit => visit.customerId === customer.id).sort((a, b) => b.date.localeCompare(a.date));
+    const entry = node('div', undefined, 'entry');
+    const name = node('button', customer.name, 'customer-name');
+    name.type = 'button';
+    name.onclick = () => showCustomerDetail(customer.id);
+    const lastVisit = related.length ? ` / 最終：${related[0].date}` : '';
+    entry.append(name, node('div', `${related.length}回来店${lastVisit}`, 'muted'));
+    const actions = node('div', undefined, 'entry-actions');
+    const removeButton = node('button', '削除', 'btn danger tiny');
+    removeButton.type = 'button';
+    removeButton.onclick = () => removeCustomer(customer);
+    actions.append(removeButton);
+    entry.append(actions);
+    list.append(entry);
+  }
+}
+
+async function saveCustomer() {
+  const button = $('saveCustomer');
+  if (!db || button.disabled) return;
+  const name = $('customerName').value.trim();
+  if (!name) {
+    alert('名前を入力してください');
+    $('customerName').focus();
+    return;
+  }
+  const id = editingCustomerId;
+  const fields = {
+    name,
+    birthday: $('customerBirthday').value.trim(),
+    alcohol: $('customerAlcohol').value.trim(),
+    memo: $('customerMemo').value.trim(),
+  };
+  button.disabled = true;
+  report('');
+  try {
+    await writeData('customers', (transaction, abort) => {
+      const store = transaction.objectStore('customers');
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const original = request.result.find(customer => customer.id === id);
+        if (id !== null && !original) {
+          abort(Error('編集する顧客が見つかりません'));
+          return;
+        }
+        if (name !== original?.name && request.result.some(customer => customer.name === name)) {
+          abort(Error('同じ名前が登録されています'));
+          return;
+        }
+        if (original) store.put({ ...original, ...fields });
+        else store.add({ id: crypto.randomUUID(), ...fields });
+      };
+    });
+    await refresh();
+    showCustomerList();
+  } catch (error) {
+    alert(`保存エラー：${error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function addVisit() {
+  const customerId = $('visitCustomer').value;
+  if (!db || !customerId) return;
+  const date = selected;
+  report('');
+  try {
+    await writeData(stores, (transaction, abort) => {
+      const customer = transaction.objectStore('customers').get(customerId);
+      const store = transaction.objectStore('visits');
+      const records = store.getAll();
+      records.onsuccess = () => {
+        if (!customer.result) {
+          abort(Error('顧客情報が見つかりません'));
+          return;
+        }
+        if (records.result.some(visit => visit.customerId === customerId && visit.date === date)) {
+          abort(Error('この日の来店は記録済みです'));
+          return;
+        }
+        store.add({ id: crypto.randomUUID(), customerId, date });
+      };
+    });
+    await refresh();
+  } catch (error) {
+    await refresh().catch(() => {});
+    alert(`来店記録エラー：${error.message}`);
+  }
+}
+
+async function cancelVisit(id) {
+  if (!confirm('この来店記録と、この日のメモを削除しますか？')) return;
+  report('');
+  try {
+    await writeData('visits', transaction => transaction.objectStore('visits').delete(id));
+    await refresh();
+  } catch (error) {
+    report(`取消エラー：${error.message}`);
+  }
+}
+
+async function removeCustomer(customer) {
+  if (!confirm(`${customer.name}さんと来店履歴・来店日別メモを削除しますか？`)) return;
+  report('');
+  try {
+    await writeData(stores, transaction => {
+      transaction.objectStore('customers').delete(customer.id);
+      const store = transaction.objectStore('visits');
+      const request = store.getAll();
+      request.onsuccess = () => {
+        for (const visit of request.result) {
+          if (visit.customerId === customer.id) store.delete(visit.id);
+        }
+      };
+    });
+    await refresh();
+  } catch (error) {
+    report(`削除エラー：${error.message}`);
+  }
+}
+
+function syncNoteViewport() {
+  const overlay = $('visitNoteOverlay');
+  const viewport = window.visualViewport;
+  if (overlay.hidden || !viewport) return;
+  overlay.classList.toggle('compact', viewport.height < 360);
+  overlay.style.setProperty('--note-height', `${viewport.height}px`);
+  overlay.style.setProperty('--note-top', `${viewport.offsetTop}px`);
+}
+
+function openVisitNote(id) {
+  const visit = visits.find(v => v.id === id);
+  if (!visit) return;
+  noteVisitId = id;
+  const name = customers.find(customer => customer.id === visit.customerId)?.name || '削除済みの顧客';
+  $('visitNoteInfo').textContent = `${visit.date} ／ ${name}`;
+  $('visitNoteText').value = visit.note ?? '';
+  $('visitNoteOverlay').hidden = false;
+  syncNoteViewport();
+  $('visitNoteText').focus();
+}
+
+function closeVisitNote() {
+  noteVisitId = null;
+  $('visitNoteOverlay').hidden = true;
+}
+
+async function saveVisitNote() {
+  const button = $('saveVisitNote');
+  const id = noteVisitId;
+  if (id === null || button.disabled) return;
+  const note = $('visitNoteText').value;
+  button.disabled = true;
+  report('');
+  try {
+    await writeData('visits', (transaction, abort) => {
+      const store = transaction.objectStore('visits');
+      const request = store.get(id);
+      request.onsuccess = () => {
+        if (!request.result) {
+          abort(Error('来店記録が見つかりません'));
+          return;
+        }
+        store.put({ ...request.result, note });
+      };
+    });
+    if (noteVisitId === id) closeVisitNote();
+    await refresh();
+  } catch (error) {
+    alert(`来店メモの保存エラー：${error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function exportBackup() {
+  const button = $('export');
+  if (!db || button.disabled) return;
+  button.disabled = true;
+  report('');
+  try {
+    const data = await readData();
+    const content = JSON.stringify({ version: 1, ...data }, null, 2);
+    const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
+    const link = node('a');
+    link.href = url;
+    link.download = `customer-backup-${dateKey(new Date())}.json`;
+    link.hidden = true;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  } catch (error) {
+    report(`書き出しエラー：${error.message}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function validateBackup(data) {
+  const textOrMissing = value => value === undefined || typeof value === 'string';
+  if (!data || data.version !== 1 || !Array.isArray(data.customers) || !Array.isArray(data.visits) ||
+      !data.customers.every(c => c && typeof c.id === 'string' && typeof c.name === 'string' &&
+        textOrMissing(c.birthday) && textOrMissing(c.alcohol) && textOrMissing(c.memo)) ||
+      !data.visits.every(v => v && typeof v.id === 'string' && typeof v.customerId === 'string' &&
+        typeof v.date === 'string' && textOrMissing(v.note))) {
+    throw Error('ファイルの形式が違います');
+  }
+  for (const store of stores) {
+    if (new Set(data[store].map(record => record.id)).size !== data[store].length) {
+      throw Error('同じIDの記録が重複しています');
+    }
+  }
+}
+
+async function importBackup(event) {
+  const input = event.target;
+  const file = input.files?.[0];
+  if (!file || !db || input.disabled) return;
+  input.disabled = true;
+  report('');
+  try {
+    const data = JSON.parse(await file.text());
+    validateBackup(data);
+    if (!confirm('現在のデータをバックアップの内容で置き換えますか？')) return;
+    await writeData(stores, transaction => {
+      for (const name of stores) {
+        const store = transaction.objectStore(name);
+        store.clear();
+        for (const record of data[name]) store.add(record);
+      }
+    });
+    await refresh();
+    showCustomerList();
+    alert('読み込みが完了しました');
+  } catch (error) {
+    report(`読み込みエラー：${error.message}`);
+  } finally {
+    input.value = '';
+    input.disabled = false;
+  }
+}
+
+function changeMonth(offset) {
+  const date = new Date(year, month + offset, 1);
+  year = date.getFullYear();
+  month = date.getMonth();
+  selected = dateKey(date);
+  render();
+}
+
+for (const button of document.querySelectorAll('[data-tab]')) {
+  button.onclick = () => showTab(button.dataset.tab);
+}
+$('prev').onclick = () => changeMonth(-1);
+$('next').onclick = () => changeMonth(1);
+$('openCustomerForm').onclick = () => showCustomerForm();
+$('cancelCustomer').onclick = showCustomerList;
+$('goCustomerList').onclick = showCustomerList;
+$('closeCustomerDetail').onclick = showCustomerList;
+$('editCustomer').onclick = () => showCustomerForm(detailCustomerId);
+$('customerForm').onsubmit = event => {
+  event.preventDefault();
+  saveCustomer();
+};
+$('saveCustomer').onclick = saveCustomer;
+$('addVisit').onclick = addVisit;
+$('cancelVisitNote').onclick = closeVisitNote;
+$('saveVisitNote').onclick = saveVisitNote;
+$('export').onclick = exportBackup;
+$('import').onchange = importBackup;
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && noteVisitId !== null) closeVisitNote();
+});
+window.visualViewport?.addEventListener('resize', syncNoteViewport);
+window.visualViewport?.addEventListener('scroll', syncNoteViewport);
+
+$('saveCustomer').disabled = true;
+$('export').disabled = true;
+$('import').disabled = true;
+render();
+(async () => {
+  try {
+    if (!('indexedDB' in window)) throw Error('このブラウザはIndexedDBに対応していません');
+    db = await openDB();
+    await refresh();
+    $('saveCustomer').disabled = false;
+    $('export').disabled = false;
+    $('import').disabled = false;
+  } catch (error) {
+    db?.close();
+    db = undefined;
+    $('addVisit').disabled = true;
+    report(`データの保存を利用できません。Safariで公開ページを開いてください。詳細：${error.message}`);
+  }
+})();
+</script>
+</body>
+</html>
